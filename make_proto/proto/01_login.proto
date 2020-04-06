@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+// 登录协议
+message pt_1001_c {
+    uint32 user_id = 1;
+    string md5 = 2;
+}
+
+message pt_1001_s {
+    uint32 result = 1;
+}

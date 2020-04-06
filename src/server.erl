@@ -7,7 +7,7 @@
 %% API
 -export([start/0]).
 
--define(APPS, [inets, erlll_game]).
+-define(APPS, [inets, ranch, erlll_game]).
 
 %% ==============================
 %% 启动应用

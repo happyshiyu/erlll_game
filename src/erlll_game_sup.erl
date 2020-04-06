@@ -14,7 +14,7 @@
 -define(SERVER, ?MODULE).
 
 start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+    supervisor:start_link({local, ?SERVER}, ?MODULE, [game]).
 
 %% sup_flags() = #{strategy => strategy(),         % optional
 %%                 intensity => non_neg_integer(), % optional
@@ -25,11 +25,21 @@ start_link() ->
 %%                  shutdown => shutdown(), % optional
 %%                  type => worker(),       % optional
 %%                  modules => modules()}   % optional
-init([]) ->
+init([Type]) ->
     SupFlags = #{strategy => one_for_all,
                  intensity => 0,
                  period => 1},
-    ChildSpecs = [],
-    {ok, {SupFlags, ChildSpecs}}.
+    {ok, {SupFlags, get_child_spec(Type)}}.
 
 %% internal functions
+get_child_spec(game) ->
+    [
+        #{id => srv_net, start => {srv_net, start_link, []}, type => worker},
+        #{id => srv_mysql, start => {srv_mysql, start_link, []}, type => worker},
+        #{id => srv_redis, start => {srv_redis, start_link, []}, type => worker}
+        #{id => srv_beam, start => {srv_beam, start_link, []}, type => worker}
+    ];
+get_child_spec(login) ->
+    [
+        #{id => srv_net, start => {srv_net, start_link, []}}
+    ].
