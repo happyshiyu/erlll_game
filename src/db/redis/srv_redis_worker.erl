@@ -2,18 +2,18 @@
 %%% @author shiyu
 %%% @copyright (C) 2020, junhai
 %%% @doc
-%%% redis管理进程
+%%% redis工作进程
 %%% @end
 %%% Created : 06. 4月 2020 下午 20:37
 %%%-------------------------------------------------------------------
--module(srv_redis).
+-module(srv_redis_worker).
 -author("shiyu").
 
 -behaviour(gen_server).
 
 %% API
 -export([
-    start_link/0,
+    start_link/1,
     q/1
     ]).
 
@@ -28,16 +28,14 @@
 -define(SERVER, ?MODULE).
 
 -record(state, {
-    pid
+    conn
 }).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
--spec(start_link() ->
-    {ok, Pid :: pid()} | ignore | {error, Reason :: term()}).
-start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(Args) ->
+    gen_server:start_link(?MODULE, Args, []).
 
 q(Query) ->
     gen_server:call(?MODULE, {q, Query}).
@@ -49,12 +47,11 @@ q(Query) ->
 -spec(init(Args :: term()) ->
     {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term()} | ignore).
-init([]) ->
-    {ok, Pid} = eredis:start_link("localhost", 6379),
-
-    io:format("A => ~p ~n", [eredis:q(Pid, ["SET", "A", "1"])]),
-    io:format("redis start success! ~n"),
-    {ok, #state{pid = Pid}}.
+init(Args) ->
+    Host = proplists:get_value(host, Args),
+    Port = proplists:get_value(port, Args),
+    {ok, Conn} = eredis:start_link(Host, Port),
+    {ok, #state{conn = Conn}}.
 
 
 -spec(handle_call(Request :: term(), From :: {pid(), Tag :: term()},
@@ -65,8 +62,8 @@ init([]) ->
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), Reply :: term(), NewState :: #state{}} |
     {stop, Reason :: term(), NewState :: #state{}}).
-handle_call({q, Query}, _From, #state{pid = Pid} = State) ->
-    Ret = eredis:q(Pid, Query),
+handle_call({q, Command}, _From, #state{conn = Conn} = State) ->
+    Ret = eredis:q(Conn, Command),
     {reply, Ret, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.

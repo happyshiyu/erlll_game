@@ -34,10 +34,9 @@ init([Type]) ->
 %% internal functions
 get_child_spec(game) ->
     [
-        #{id => srv_net, start => {srv_net, start_link, []}, type => worker},
-        #{id => srv_mysql, start => {srv_mysql, start_link, []}, type => worker},
-        #{id => srv_redis, start => {srv_redis, start_link, []}, type => worker}
-        #{id => srv_beam, start => {srv_beam, start_link, []}, type => worker}
+        #{id => pool_sup, start => {pool_sup, start_link, []}, type => supervisor},
+        #{id => srv_net, start => {srv_net, start_link, []}, type => worker}
+%%        #{id => srv_beam, start => {srv_beam, start_link, []}, type => worker}
     ];
 get_child_spec(login) ->
     [

@@ -2,18 +2,18 @@
 %%% @author shiyu
 %%% @copyright (C) 2020
 %%% @doc
-%%% mysql管理进程
+%%% mysql工作进程
 %%% @end
 %%% Created : 06. 4月 2020 下午 20:29
 %%%-------------------------------------------------------------------
--module(srv_mysql).
+-module(srv_mysql_worker).
 -author("shiyu").
 
 -behaviour(gen_server).
 
 %% API
 -export([
-    start_link/0,
+    start_link/1,
     query/2
 ]).
 
@@ -28,16 +28,14 @@
 -define(SERVER, ?MODULE).
 
 -record(state, {
-    pid
+    conn
 }).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
--spec(start_link() ->
-    {ok, Pid :: pid()} | ignore | {error, Reason :: term()}).
-start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(Args) ->
+    gen_server:start_link(?MODULE, Args, []).
 
 
 query(SQL, Args) ->
@@ -51,17 +49,9 @@ query(SQL, Args) ->
 -spec(init(Args :: term()) ->
     {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term()} | ignore).
-init([]) ->
-    Conf = [
-        {host, "localhost"},
-        {port, 3306},
-        {user, "root"},
-        {password, "123456"},
-        {database, "test"}
-    ],
-    {ok, Pid} = mysql:start_link(Conf),
-    io:format("mysql start success ~n"),
-    {ok, #state{pid = Pid}}.
+init(Args) ->
+    {ok, Conn} = mysql:start_link(Args),
+    {ok, #state{conn = Conn}}.
 
 
 -spec(handle_call(Request :: term(), From :: {pid(), Tag :: term()},
@@ -72,8 +62,11 @@ init([]) ->
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), Reply :: term(), NewState :: #state{}} |
     {stop, Reason :: term(), NewState :: #state{}}).
-handle_call({query, SQL, Args}, _From, #state{pid = Pid} = State) ->
-    A = mysql:query(Pid, SQL, Args),
+handle_call({query, SQL}, _From, #state{conn = Conn} = State) ->
+    A = mysql:query(Conn, SQL),
+    {reply, A, State};
+handle_call({query, SQL, Args}, _From, #state{conn = Conn} = State) ->
+    A = mysql:query(Conn, SQL, Args),
     {reply, A, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
