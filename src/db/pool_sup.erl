@@ -64,7 +64,7 @@ get_conf() ->
                 {port, 3306},
                 {user, "root"},
                 {password, "123456"},
-                {database, "test"}
+                {database, "erlll_game"}
             ]
         },
         {redis_pool,

@@ -88,14 +88,17 @@ encode_msg_pt_1001_c(Msg, TrUserData) ->
     encode_msg_pt_1001_c(Msg, <<>>, TrUserData).
 
 
-encode_msg_pt_1001_c(#pt_1001_c{user_id = F1, md5 = F2},
+encode_msg_pt_1001_c(#pt_1001_c{username = F1,
+				password = F2},
 		     Bin, TrUserData) ->
     B1 = if F1 == undefined -> Bin;
 	    true ->
 		begin
 		  TrF1 = id(F1, TrUserData),
-		  if TrF1 =:= 0 -> Bin;
-		     true -> e_varint(TrF1, <<Bin/binary, 8>>, TrUserData)
+		  case is_empty_string(TrF1) of
+		    true -> Bin;
+		    false ->
+			e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
 		  end
 		end
 	 end,
@@ -115,7 +118,7 @@ encode_msg_pt_1001_s(Msg, TrUserData) ->
     encode_msg_pt_1001_s(Msg, <<>>, TrUserData).
 
 
-encode_msg_pt_1001_s(#pt_1001_s{result = F1}, Bin,
+encode_msg_pt_1001_s(#pt_1001_s{ret = F1}, Bin,
 		     TrUserData) ->
     if F1 == undefined -> Bin;
        true ->
@@ -269,20 +272,20 @@ decode_msg_2_doit(pt_1001_s, Bin, TrUserData) ->
 
 decode_msg_pt_1001_c(Bin, TrUserData) ->
     dfp_read_field_def_pt_1001_c(Bin, 0, 0,
-				 id(0, TrUserData), id([], TrUserData),
+				 id([], TrUserData), id([], TrUserData),
 				 TrUserData).
 
-dfp_read_field_def_pt_1001_c(<<8, Rest/binary>>, Z1, Z2,
-			     F@_1, F@_2, TrUserData) ->
-    d_field_pt_1001_c_user_id(Rest, Z1, Z2, F@_1, F@_2,
-			      TrUserData);
+dfp_read_field_def_pt_1001_c(<<10, Rest/binary>>, Z1,
+			     Z2, F@_1, F@_2, TrUserData) ->
+    d_field_pt_1001_c_username(Rest, Z1, Z2, F@_1, F@_2,
+			       TrUserData);
 dfp_read_field_def_pt_1001_c(<<18, Rest/binary>>, Z1,
 			     Z2, F@_1, F@_2, TrUserData) ->
-    d_field_pt_1001_c_md5(Rest, Z1, Z2, F@_1, F@_2,
-			  TrUserData);
+    d_field_pt_1001_c_password(Rest, Z1, Z2, F@_1, F@_2,
+			       TrUserData);
 dfp_read_field_def_pt_1001_c(<<>>, 0, 0, F@_1, F@_2,
 			     _) ->
-    #pt_1001_c{user_id = F@_1, md5 = F@_2};
+    #pt_1001_c{username = F@_1, password = F@_2};
 dfp_read_field_def_pt_1001_c(Other, Z1, Z2, F@_1, F@_2,
 			     TrUserData) ->
     dg_read_field_def_pt_1001_c(Other, Z1, Z2, F@_1, F@_2,
@@ -297,12 +300,12 @@ dg_read_field_def_pt_1001_c(<<0:1, X:7, Rest/binary>>,
 			    N, Acc, F@_1, F@_2, TrUserData) ->
     Key = X bsl N + Acc,
     case Key of
-      8 ->
-	  d_field_pt_1001_c_user_id(Rest, 0, 0, F@_1, F@_2,
-				    TrUserData);
+      10 ->
+	  d_field_pt_1001_c_username(Rest, 0, 0, F@_1, F@_2,
+				     TrUserData);
       18 ->
-	  d_field_pt_1001_c_md5(Rest, 0, 0, F@_1, F@_2,
-				TrUserData);
+	  d_field_pt_1001_c_password(Rest, 0, 0, F@_1, F@_2,
+				     TrUserData);
       _ ->
 	  case Key band 7 of
 	    0 ->
@@ -322,27 +325,32 @@ dg_read_field_def_pt_1001_c(<<0:1, X:7, Rest/binary>>,
     end;
 dg_read_field_def_pt_1001_c(<<>>, 0, 0, F@_1, F@_2,
 			    _) ->
-    #pt_1001_c{user_id = F@_1, md5 = F@_2}.
+    #pt_1001_c{username = F@_1, password = F@_2}.
 
-d_field_pt_1001_c_user_id(<<1:1, X:7, Rest/binary>>, N,
-			  Acc, F@_1, F@_2, TrUserData)
+d_field_pt_1001_c_username(<<1:1, X:7, Rest/binary>>, N,
+			   Acc, F@_1, F@_2, TrUserData)
     when N < 57 ->
-    d_field_pt_1001_c_user_id(Rest, N + 7, X bsl N + Acc,
-			      F@_1, F@_2, TrUserData);
-d_field_pt_1001_c_user_id(<<0:1, X:7, Rest/binary>>, N,
-			  Acc, _, F@_2, TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-			  Rest},
+    d_field_pt_1001_c_username(Rest, N + 7, X bsl N + Acc,
+			       F@_1, F@_2, TrUserData);
+d_field_pt_1001_c_username(<<0:1, X:7, Rest/binary>>, N,
+			   Acc, _, F@_2, TrUserData) ->
+    {NewFValue, RestF} = begin
+			   Len = X bsl N + Acc,
+			   <<Utf8:Len/binary, Rest2/binary>> = Rest,
+			   {id(unicode:characters_to_list(Utf8, unicode),
+			       TrUserData),
+			    Rest2}
+			 end,
     dfp_read_field_def_pt_1001_c(RestF, 0, 0, NewFValue,
 				 F@_2, TrUserData).
 
-d_field_pt_1001_c_md5(<<1:1, X:7, Rest/binary>>, N, Acc,
-		      F@_1, F@_2, TrUserData)
+d_field_pt_1001_c_password(<<1:1, X:7, Rest/binary>>, N,
+			   Acc, F@_1, F@_2, TrUserData)
     when N < 57 ->
-    d_field_pt_1001_c_md5(Rest, N + 7, X bsl N + Acc, F@_1,
-			  F@_2, TrUserData);
-d_field_pt_1001_c_md5(<<0:1, X:7, Rest/binary>>, N, Acc,
-		      F@_1, _, TrUserData) ->
+    d_field_pt_1001_c_password(Rest, N + 7, X bsl N + Acc,
+			       F@_1, F@_2, TrUserData);
+d_field_pt_1001_c_password(<<0:1, X:7, Rest/binary>>, N,
+			   Acc, F@_1, _, TrUserData) ->
     {NewFValue, RestF} = begin
 			   Len = X bsl N + Acc,
 			   <<Utf8:Len/binary, Rest2/binary>> = Rest,
@@ -398,10 +406,9 @@ decode_msg_pt_1001_s(Bin, TrUserData) ->
 
 dfp_read_field_def_pt_1001_s(<<8, Rest/binary>>, Z1, Z2,
 			     F@_1, TrUserData) ->
-    d_field_pt_1001_s_result(Rest, Z1, Z2, F@_1,
-			     TrUserData);
+    d_field_pt_1001_s_ret(Rest, Z1, Z2, F@_1, TrUserData);
 dfp_read_field_def_pt_1001_s(<<>>, 0, 0, F@_1, _) ->
-    #pt_1001_s{result = F@_1};
+    #pt_1001_s{ret = F@_1};
 dfp_read_field_def_pt_1001_s(Other, Z1, Z2, F@_1,
 			     TrUserData) ->
     dg_read_field_def_pt_1001_s(Other, Z1, Z2, F@_1,
@@ -417,7 +424,7 @@ dg_read_field_def_pt_1001_s(<<0:1, X:7, Rest/binary>>,
     Key = X bsl N + Acc,
     case Key of
       8 ->
-	  d_field_pt_1001_s_result(Rest, 0, 0, F@_1, TrUserData);
+	  d_field_pt_1001_s_ret(Rest, 0, 0, F@_1, TrUserData);
       _ ->
 	  case Key band 7 of
 	    0 ->
@@ -433,15 +440,15 @@ dg_read_field_def_pt_1001_s(<<0:1, X:7, Rest/binary>>,
 	  end
     end;
 dg_read_field_def_pt_1001_s(<<>>, 0, 0, F@_1, _) ->
-    #pt_1001_s{result = F@_1}.
+    #pt_1001_s{ret = F@_1}.
 
-d_field_pt_1001_s_result(<<1:1, X:7, Rest/binary>>, N,
-			 Acc, F@_1, TrUserData)
+d_field_pt_1001_s_ret(<<1:1, X:7, Rest/binary>>, N, Acc,
+		      F@_1, TrUserData)
     when N < 57 ->
-    d_field_pt_1001_s_result(Rest, N + 7, X bsl N + Acc,
-			     F@_1, TrUserData);
-d_field_pt_1001_s_result(<<0:1, X:7, Rest/binary>>, N,
-			 Acc, _, TrUserData) ->
+    d_field_pt_1001_s_ret(Rest, N + 7, X bsl N + Acc, F@_1,
+			  TrUserData);
+d_field_pt_1001_s_ret(<<0:1, X:7, Rest/binary>>, N, Acc,
+		      _, TrUserData) ->
     {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
 			  Rest},
     dfp_read_field_def_pt_1001_s(RestF, 0, 0, NewFValue,
@@ -561,24 +568,26 @@ merge_msgs(Prev, New, MsgName, Opts) ->
     end.
 
 -compile({nowarn_unused_function,merge_msg_pt_1001_c/3}).
-merge_msg_pt_1001_c(#pt_1001_c{user_id = PFuser_id,
-			       md5 = PFmd5},
-		    #pt_1001_c{user_id = NFuser_id, md5 = NFmd5}, _) ->
-    #pt_1001_c{user_id =
-		   if NFuser_id =:= undefined -> PFuser_id;
-		      true -> NFuser_id
+merge_msg_pt_1001_c(#pt_1001_c{username = PFusername,
+			       password = PFpassword},
+		    #pt_1001_c{username = NFusername,
+			       password = NFpassword},
+		    _) ->
+    #pt_1001_c{username =
+		   if NFusername =:= undefined -> PFusername;
+		      true -> NFusername
 		   end,
-	       md5 =
-		   if NFmd5 =:= undefined -> PFmd5;
-		      true -> NFmd5
+	       password =
+		   if NFpassword =:= undefined -> PFpassword;
+		      true -> NFpassword
 		   end}.
 
 -compile({nowarn_unused_function,merge_msg_pt_1001_s/3}).
-merge_msg_pt_1001_s(#pt_1001_s{result = PFresult},
-		    #pt_1001_s{result = NFresult}, _) ->
-    #pt_1001_s{result =
-		   if NFresult =:= undefined -> PFresult;
-		      true -> NFresult
+merge_msg_pt_1001_s(#pt_1001_s{ret = PFret},
+		    #pt_1001_s{ret = NFret}, _) ->
+    #pt_1001_s{ret =
+		   if NFret =:= undefined -> PFret;
+		      true -> NFret
 		   end}.
 
 
@@ -607,13 +616,14 @@ verify_msg(Msg, MsgName, Opts) ->
 
 -compile({nowarn_unused_function,v_msg_pt_1001_c/3}).
 -dialyzer({nowarn_function,v_msg_pt_1001_c/3}).
-v_msg_pt_1001_c(#pt_1001_c{user_id = F1, md5 = F2},
+v_msg_pt_1001_c(#pt_1001_c{username = F1,
+			   password = F2},
 		Path, TrUserData) ->
     if F1 == undefined -> ok;
-       true -> v_type_uint32(F1, [user_id | Path], TrUserData)
+       true -> v_type_string(F1, [username | Path], TrUserData)
     end,
     if F2 == undefined -> ok;
-       true -> v_type_string(F2, [md5 | Path], TrUserData)
+       true -> v_type_string(F2, [password | Path], TrUserData)
     end,
     ok;
 v_msg_pt_1001_c(X, Path, _TrUserData) ->
@@ -621,10 +631,10 @@ v_msg_pt_1001_c(X, Path, _TrUserData) ->
 
 -compile({nowarn_unused_function,v_msg_pt_1001_s/3}).
 -dialyzer({nowarn_function,v_msg_pt_1001_s/3}).
-v_msg_pt_1001_s(#pt_1001_s{result = F1}, Path,
+v_msg_pt_1001_s(#pt_1001_s{ret = F1}, Path,
 		TrUserData) ->
     if F1 == undefined -> ok;
-       true -> v_type_uint32(F1, [result | Path], TrUserData)
+       true -> v_type_uint32(F1, [ret | Path], TrUserData)
     end,
     ok;
 v_msg_pt_1001_s(X, Path, _TrUserData) ->
@@ -702,13 +712,13 @@ cons(Elem, Acc, _TrUserData) -> [Elem | Acc].
 
 get_msg_defs() ->
     [{{msg, pt_1001_c},
-      [#field{name = user_id, fnum = 1, rnum = 2,
-	      type = uint32, occurrence = optional, opts = []},
-       #field{name = md5, fnum = 2, rnum = 3, type = string,
-	      occurrence = optional, opts = []}]},
+      [#field{name = username, fnum = 1, rnum = 2,
+	      type = string, occurrence = optional, opts = []},
+       #field{name = password, fnum = 2, rnum = 3,
+	      type = string, occurrence = optional, opts = []}]},
      {{msg, pt_1001_s},
-      [#field{name = result, fnum = 1, rnum = 2,
-	      type = uint32, occurrence = optional, opts = []}]}].
+      [#field{name = ret, fnum = 1, rnum = 2, type = uint32,
+	      occurrence = optional, opts = []}]}].
 
 
 get_msg_names() -> [pt_1001_c, pt_1001_s].
@@ -736,13 +746,13 @@ fetch_enum_def(EnumName) ->
 
 
 find_msg_def(pt_1001_c) ->
-    [#field{name = user_id, fnum = 1, rnum = 2,
-	    type = uint32, occurrence = optional, opts = []},
-     #field{name = md5, fnum = 2, rnum = 3, type = string,
-	    occurrence = optional, opts = []}];
+    [#field{name = username, fnum = 1, rnum = 2,
+	    type = string, occurrence = optional, opts = []},
+     #field{name = password, fnum = 2, rnum = 3,
+	    type = string, occurrence = optional, opts = []}];
 find_msg_def(pt_1001_s) ->
-    [#field{name = result, fnum = 1, rnum = 2,
-	    type = uint32, occurrence = optional, opts = []}];
+    [#field{name = ret, fnum = 1, rnum = 2, type = uint32,
+	    occurrence = optional, opts = []}];
 find_msg_def(_) -> error.
 
 

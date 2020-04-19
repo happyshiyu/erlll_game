@@ -7,11 +7,12 @@
 %%% Created : 28. 3月 2020 10:25
 %%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
--module(client_protocol).
+-module(srv_role).
 
 -behaviour(gen_server).
 -behaviour(ranch_protocol).
 
+-include("role.hrl").
 -include("01_login.hrl").
 
 %% API.
@@ -20,12 +21,6 @@
 %% gen_server.
 -export([init/4]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
-
--record(state, {
-    socket,
-    transport,
-    user_id = 0
-}).
 
 %% API.
 
@@ -42,10 +37,10 @@ init(Ref, Socket, Transport, _Opts = []) ->
     erlang:process_flag(trap_exit, true),
     ok = proc_lib:init_ack({ok, self()}),
     ok = ranch:accept_ack(Ref),
-    ok = Transport:setopts(Socket, [{active, once}]),
-    gen_server:enter_loop(?MODULE, [], #state{socket = Socket, transport = Transport}, infinity).
+    ok = Transport:setopts(Socket, [binary, {active, once}, {packet, 0}]),
+    gen_server:enter_loop(?MODULE, [], #role{socket = Socket, transport = Transport}, infinity).
 
-handle_info({tcp, Socket, Data}, State = #state{socket = Socket, transport = Transport}) ->
+handle_info({tcp, Socket, Data}, State = #role{socket = Socket, transport = Transport}) ->
     Transport:setopts(Socket, [{active, once}]),
     ProtoList = lib_proto:unpack(Data),
     io:format("ProtoList => ~p ~n", [ProtoList]),
@@ -69,8 +64,8 @@ handle_info({tcp, Socket, Data}, State = #state{socket = Socket, transport = Tra
         end,
     NewState = lists:foldl(F, State, ProtoList),
     {noreply, NewState};
-handle_info({send, {ProtoId, Tuple}}, #state{} = State) when is_tuple(Tuple) ->
-    #state{socket = Socket, transport = Transport} = State,
+handle_info({send, {ProtoId, Tuple}}, #role{} = State) when is_tuple(Tuple) ->
+    #role{socket = Socket, transport = Transport} = State,
     Transport:send(Socket, lib_proto:pack(ProtoId, Tuple)),
     {noreply, State};
 handle_info({tcp_closed, _Socket}, State) ->

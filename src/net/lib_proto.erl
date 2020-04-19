@@ -38,8 +38,8 @@ unpack(Data, UnPackList) ->
     BodyLen = Length - ProtoHeadLen,
     {UnpackBin, LeftBin} = erlang:split_binary(Bin, BodyLen),
     ProtoName = erlang:list_to_atom("pt_" ++ erlang:integer_to_list(ProtoId) ++ "_c"),
-    Encoder = get_edecoder(ProtoId),
-    NewUnPackList = [{ProtoId, Encoder:decode_msg(UnpackBin, ProtoName)} | UnPackList],
+    Decoder = get_edecoder(ProtoId),
+    NewUnPackList = [{ProtoId, Decoder:decode_msg(UnpackBin, ProtoName)} | UnPackList],
     case erlang:size(LeftBin) >= 6 of
         true -> unpack(LeftBin, NewUnPackList);
         false -> NewUnPackList

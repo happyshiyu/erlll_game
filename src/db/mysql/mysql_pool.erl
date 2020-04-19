@@ -17,11 +17,13 @@
 
 
 query(Sql) ->
-    poolboy:transaction(?MODULE, fun(Worker) ->
-        gen_server:call(Worker, {query, Sql})
-                                 end).
+    case poolboy:transaction(?MODULE, fun(Worker) -> gen_server:call(Worker, {query, Sql}) end) of
+        {ok, _, Ret} -> Ret;
+        _ -> false
+    end.
 
 query(Sql, Params) ->
-    poolboy:transaction(?MODULE, fun(Worker) ->
-        gen_server:call(Worker, {query, Sql, Params})
-                                 end).
+    case poolboy:transaction(?MODULE, fun(Worker) -> gen_server:call(Worker, {query, Sql, Params}) end) of
+        {ok, _, Ret} -> Ret;
+        _ -> false
+    end.

@@ -9,6 +9,8 @@
 -module(login_handler).
 -author("shiyu").
 
+-include("role.hrl").
+-include("ret_code.hrl").
 -include("01_login.hrl").
 
 %% API
@@ -19,10 +21,10 @@
 handle(_ProtoId, Tuple, State) ->
     do_handle(Tuple, State).
 
-do_handle(#pt_1001_c{user_id = UserId}, _State) ->
-    case lib_game_login:handle_login(UserId) of
-        true ->
-            {reply, #pt_1001_s{result = 0}};
-        false ->
-            {reply, #pt_1001_s{result = 1}}
+do_handle(#pt_1001_c{username = Username, password = Password}, Role) ->
+    case lib_role_login:handle_login(Username, Password, Role) of
+        {true, NewRole} ->
+            {reply, #pt_1001_s{}, NewRole};
+        {false, RetCode} ->
+            {reply, #pt_1001_s{ret = RetCode}}
     end.

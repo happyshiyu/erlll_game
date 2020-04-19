@@ -80,13 +80,15 @@ handle_cast(_Request, State) ->
 handle_info(init, #state{} = State) ->
     {ok, Socket} = gen_tcp:connect("127.0.0.1", 8080, [binary,
         {packet, 0},
-        {active, once},
-        {send_timeout, 30000},
+        {active, true},
+        {send_timeout, 10000},
         {send_timeout_close, true},
         {exit_on_close, true},
         {keepalive, true},
         {delay_send, true},
-        {nodelay, true}]),
+        {nodelay, true}
+    ]),
+    reloader:start_link(),
     {noreply, State#state{socket = Socket}};
 
 handle_info({test, ProtoId, Tuple}, #state{socket = Socket} = State) ->

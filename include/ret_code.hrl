@@ -2,17 +2,12 @@
 %%% @author shiyu
 %%% @copyright (C) 2020
 %%% @doc
-%%% 游戏的登录模块
+%%% 返回码
 %%% @end
-%%% Created : 05. 4月 2020 下午 23:19
+%%% Created : 19. 4月 2020 下午 21:27
 %%%-------------------------------------------------------------------
--module(lib_game_login).
 -author("shiyu").
 
-%% API
--export([
-    handle_login/1
-]).
-
-handle_login(_UserId) ->
-    true.
+-define(RET_SUCCESS, 0).
+-define(RET_SUCCESS_1, 1).
+-define(RET_PASSWORD_INCORRECT, 2).
