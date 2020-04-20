@@ -10,7 +10,7 @@
 -author("shiyu").
 
 -include("role.hrl").
--include("ret_code.hrl").
+-include("err_code.hrl").
 -include("01_login.hrl").
 
 %% API

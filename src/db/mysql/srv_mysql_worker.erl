@@ -13,8 +13,7 @@
 
 %% API
 -export([
-    start_link/1,
-    query/2
+    start_link/1
 ]).
 
 %% gen_server callbacks
@@ -37,11 +36,6 @@
 start_link(Args) ->
     gen_server:start_link(?MODULE, Args, []).
 
-
-query(SQL, Args) ->
-    gen_server:call(?SERVER, {query, SQL, Args}).
-
-
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -62,15 +56,20 @@ init(Args) ->
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), Reply :: term(), NewState :: #state{}} |
     {stop, Reason :: term(), NewState :: #state{}}).
-handle_call({query, SQL}, _From, #state{conn = Conn} = State) ->
-    A = mysql:query(Conn, SQL),
-    {reply, A, State};
-handle_call({query, SQL, Args}, _From, #state{conn = Conn} = State) ->
-    A = mysql:query(Conn, SQL, Args),
-    {reply, A, State};
+handle_call({execute, Statement, Args}, _From, #state{conn = Conn} = State) ->
+    Ret = case mysql:execute(Conn, Statement, Args) of
+              ok ->
+                  mysql:affected_rows(Conn);
+              {ok, _ColumnNames, Data} ->
+                  Data;
+              {ok, Data} ->
+                  Data;
+              {error, Reason} ->
+                  {error, Reason}
+          end,
+    {reply, Ret, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
-
 
 -spec(handle_cast(Request :: term(), State :: #state{}) ->
     {noreply, NewState :: #state{}} |

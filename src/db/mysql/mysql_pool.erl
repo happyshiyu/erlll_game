@@ -11,19 +11,19 @@
 
 %% API
 -export([
-    query/1,
-    query/2
+    execute/1,
+    execute/2
 ]).
 
 
-query(Sql) ->
-    case poolboy:transaction(?MODULE, fun(Worker) -> gen_server:call(Worker, {query, Sql}) end) of
+execute(Sql) ->
+    case poolboy:transaction(?MODULE, fun(Worker) -> gen_server:call(Worker, {execute, Sql}) end) of
         {ok, _, Ret} -> Ret;
         _ -> false
     end.
 
-query(Sql, Params) ->
-    case poolboy:transaction(?MODULE, fun(Worker) -> gen_server:call(Worker, {query, Sql, Params}) end) of
+execute(Sql, Params) ->
+    case poolboy:transaction(?MODULE, fun(Worker) -> gen_server:call(Worker, {execute, Sql, Params}) end) of
         {ok, _, Ret} -> Ret;
         _ -> false
     end.

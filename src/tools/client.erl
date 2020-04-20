@@ -2,11 +2,11 @@
 %%% @author shiyu
 %%% @copyright (C) 2020
 %%% @doc
-%%%
+%%% client for test
 %%% @end
 %%% Created : 05. 4月 2020 下午 12:52
 %%%-------------------------------------------------------------------
--module(srv_test_client).
+-module(client).
 -author("shiyu").
 
 -behaviour(gen_server).
@@ -92,8 +92,11 @@ handle_info(init, #state{} = State) ->
     {noreply, State#state{socket = Socket}};
 
 handle_info({test, ProtoId, Tuple}, #state{socket = Socket} = State) ->
-    Bin = lib_proto:pack(ProtoId, Tuple),
-    gen_tcp:send(Socket, Bin),
+    try lib_proto:pack(ProtoId, Tuple) of
+        Bin when is_binary(Bin) -> gen_tcp:send(Socket, Bin);
+        _ -> ok
+    catch _:_ -> ok
+    end,
     {noreply, State};
 handle_info({tcp, Socket, Data}, State = #state{socket = Socket}) ->
     ProtoList = lib_proto:client_unpack(Data, []),
