@@ -24,7 +24,7 @@ start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 init([]) ->
-    {ok, _} = ranch:start_listener(tcp_reverse, ranch_tcp, [{port, 8080}], srv_role, []),
+    {ok, _} = ranch:start_listener(tcp_reverse, ranch_tcp, [{port, 8080}], player, []),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State = #state{}) ->

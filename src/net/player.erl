@@ -7,12 +7,12 @@
 %%% Created : 28. 3月 2020 10:25
 %%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
--module(srv_role).
+-module(player).
 
 -behaviour(gen_server).
 -behaviour(ranch_protocol).
 
--include("role.hrl").
+-include("player.hrl").
 -include("01_login.hrl").
 
 %% API.
@@ -38,15 +38,15 @@ init(Ref, Socket, Transport, _Opts = []) ->
     ok = proc_lib:init_ack({ok, self()}),
     ok = ranch:accept_ack(Ref),
     ok = Transport:setopts(Socket, [binary, {active, once}, {packet, 0}]),
-    gen_server:enter_loop(?MODULE, [], #role{socket = Socket, transport = Transport}, infinity).
+    gen_server:enter_loop(?MODULE, [], #player{socket = Socket, transport = Transport}, infinity).
 
-handle_info({tcp, Socket, Data}, State = #role{socket = Socket, transport = Transport}) ->
+handle_info({tcp, Socket, Data}, State = #player{socket = Socket, transport = Transport}) ->
     Transport:setopts(Socket, [{active, once}]),
-    ProtoList = lib_proto:unpack(Data),
+    ProtoList = try lib_proto:unpack(Data) catch _E1:_E2:StackTrace -> [] end,
     io:format("ProtoList => ~p ~n", [ProtoList]),
     F = fun({ProtoId, ProtoTuple}, TmpState) ->
         Handler = handler_router:route(ProtoId),
-        case Handler:handle(ProtoId, ProtoTuple, TmpState) of
+        try Handler:handle(ProtoId, ProtoTuple, TmpState) of
             {reply, Tuple} when is_tuple(Tuple) ->
                 Transport:send(Socket, lib_proto:pack(ProtoId, Tuple)),
                 TmpState;
@@ -60,12 +60,14 @@ handle_info({tcp, Socket, Data}, State = #role{socket = Socket, transport = Tran
             _Other ->
                 io:format("_Other => ~p", [_Other]),
                 TmpState
+        catch E1:E2:StackTrace ->
+            io:format("接受错误的消息: ~w ~w ~p", [E1, E2, StackTrace])
         end
         end,
     NewState = lists:foldl(F, State, ProtoList),
     {noreply, NewState};
-handle_info({send, {ProtoId, Tuple}}, #role{} = State) when is_tuple(Tuple) ->
-    #role{socket = Socket, transport = Transport} = State,
+handle_info({send, {ProtoId, Tuple}}, #player{} = State) when is_tuple(Tuple) ->
+    #player{socket = Socket, transport = Transport} = State,
     Transport:send(Socket, lib_proto:pack(ProtoId, Tuple)),
     {noreply, State};
 handle_info({tcp_closed, _Socket}, State) ->

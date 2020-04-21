@@ -8,8 +8,8 @@
 %%%-------------------------------------------------------------------
 -author("shiyu").
 
--record(role, {
+-record(player, {
     socket,
     transport,
-    role_id = 0
+    player_id = 0
 }).
