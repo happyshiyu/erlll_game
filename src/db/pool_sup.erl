@@ -1,6 +1,6 @@
 %%%-------------------------------------------------------------------
 %%% @author shiyu
-%%% @copyright (C) 2020, junhai
+%%% @copyright (C) 2020
 %%% @doc
 %%% 连接池监督者
 %%% @end
@@ -24,7 +24,6 @@
 %%%===================================================================
 
 %% @doc Starts the supervisor
--spec(start_link() -> {ok, Pid :: pid()} | ignore | {error, Reason :: term()}).
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
@@ -53,27 +52,4 @@ init([]) ->
 %%% Internal functions
 %%%===================================================================
 get_conf() ->
-    [
-        {mysql_pool,
-            srv_mysql_worker, [
-            {size, 5},
-            {max_overflow, 10}
-        ],
-            [
-                {host, "localhost"},
-                {port, 3306},
-                {user, "root"},
-                {password, "123456"},
-                {database, "erlll_game"}
-            ]
-        },
-        {redis_pool,
-            srv_redis_worker, [
-            {size, 5},
-            {max_overflow, 15}
-        ], [
-            {host, "127.0.0.1"},
-            {port, 6379}
-        ]
-        }
-    ].
+    env_util:get(pool_config).

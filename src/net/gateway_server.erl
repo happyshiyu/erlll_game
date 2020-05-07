@@ -2,20 +2,22 @@
 %%% @author shiyu
 %%% @copyright (C) 2020
 %%% @doc
-%%% redis工作进程
+%%%
 %%% @end
-%%% Created : 06. 4月 2020 下午 20:37
+%%% Created : 26. 4月 2020 下午 16:13
 %%%-------------------------------------------------------------------
--module(srv_redis_worker).
+-module(gateway_server).
 -author("shiyu").
 
 -behaviour(gen_server).
+-include("gateway.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 %% API
 -export([
-    start_link/1,
-    q/1
-    ]).
+    start_link/0,
+    create_token/1
+]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -23,22 +25,31 @@
     handle_cast/2,
     handle_info/2,
     terminate/2,
-    code_change/3]).
+    code_change/3
+]).
 
 -define(SERVER, ?MODULE).
-
--record(state, {
-    conn
-}).
+-define(VALID_TIME, 300).
+-record(state, {}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-start_link(Args) ->
-    gen_server:start_link(?MODULE, Args, []).
+-spec(start_link() ->
+    {ok, Pid :: pid()} | ignore | {error, Reason :: term()}).
+start_link() ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-q(Query) ->
-    gen_server:call(?MODULE, {q, Query}).
+-spec(create_token(Username :: binary()) -> Token :: binary()).
+create_token(Username) ->
+    Tmp0 = erlang:binary_to_list(Username),
+    Tmp1 = erlang:integer_to_list(rand:uniform(9999999)),
+    Tmp2 = Tmp0 ++ Tmp1,
+    MD51 = list_to_binary([io_lib:format("~2.16.0b",[N]) || N <- binary_to_list(erlang:md5(Tmp2))]),
+    Token = erlang:binary_part(md5(MD51), 8, 16),
+    ValidTime = time_util:time() + ?VALID_TIME,
+    ets:insert(gateway_token, #gateway_token{token = Token, username = Username, valid_time = ValidTime}),
+    Token.
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -47,11 +58,22 @@ q(Query) ->
 -spec(init(Args :: term()) ->
     {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term()} | ignore).
-init(Args) ->
-    Host = proplists:get_value(host, Args),
-    Port = proplists:get_value(port, Args),
-    {ok, Conn} = eredis:start_link(Host, Port),
-    {ok, #state{conn = Conn}}.
+init([]) ->
+    ets:new(gateway_token, [named_table, set, public, {read_concurrency, true}, {keypos, #gateway_token.token}]),
+    erlang:send_after(5 * 60 * 1000, self(), clean_invalid_token),
+    Port = env_util:get(port),
+    Dispatch = cowboy_router:compile([
+        {'_', [
+            {"/login/", gateway_handler, []}
+        ]}
+    ]),
+    cowboy:start_clear(http_server, [
+        {keepalive, false},
+        {port, Port}
+    ],
+        #{env => #{dispatch => Dispatch}}
+    ),
+    {ok, #state{}}.
 
 
 -spec(handle_call(Request :: term(), From :: {pid(), Tag :: term()},
@@ -62,11 +84,9 @@ init(Args) ->
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), Reply :: term(), NewState :: #state{}} |
     {stop, Reason :: term(), NewState :: #state{}}).
-handle_call({q, Command}, _From, #state{conn = Conn} = State) ->
-    Ret = eredis:q(Conn, Command),
-    {reply, Ret, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
+
 
 -spec(handle_cast(Request :: term(), State :: #state{}) ->
     {noreply, NewState :: #state{}} |
@@ -99,3 +119,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+clean_invalid_token() ->
+    Time = time_util:time(),
+    MS = ets:fun2ms(
+        fun(TmpToken) when
+            TmpToken#gateway_token.valid_time =< Time
+            -> true
+        end),
+    ets:select_delete(gateway_token, MS).

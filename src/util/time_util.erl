@@ -4,17 +4,16 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 12. 4月 2020 下午 22:03
+%%% Created : 26. 4月 2020 下午 19:04
 %%%-------------------------------------------------------------------
--module(redis_pool).
+-module(time_util).
 -author("shiyu").
 
 %% API
 -export([
-    q/1
+    time/0
 ]).
 
-q(Command) ->
-    poolboy:transaction(?MODULE, fun(Worker) ->
-        gen_server:call(Worker, {q, Command})
-                                 end).
+time() ->
+    {M, S, _} = os:timestamp(),
+    M * 1000000 + S.
