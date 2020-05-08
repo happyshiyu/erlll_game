@@ -48,7 +48,7 @@ handle(server_list, JsonData) ->
             jsx:encode([
                 {<<"ret">>, ?RET_TOKEN_INVALID}
             ]);
-        _ ->
+        [#gateway_token{}] ->
             RetList = lists:map(fun(#game_server_info{} = Server) ->
                 [
                     {<<"server_id">>, Server#game_server_info.server_id},

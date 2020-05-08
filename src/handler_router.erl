@@ -13,7 +13,7 @@
 -export([route/1]).
 
 route(ProtoId) ->
-    ProtoType = ProtoId div 1000,
+    ProtoType = ProtoId div 100,
     case ProtoType of
         1 -> login_handler;
         _ -> false

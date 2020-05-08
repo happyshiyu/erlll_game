@@ -37,7 +37,8 @@ init([]) ->
 get_child_spec(game_server) ->
     [
         #{id => pool_sup, start => {pool_sup, start_link, [game_server]}, type => supervisor},
-        #{id => net_listener, start => {net_listener, start_link, []}, type => worker}
+        #{id => net_listener, start => {net_listener, start_link, []}, type => worker},
+        #{id => gateway_connector, start => {gateway_connector, start_link, []}, type => worker}
     ];
 get_child_spec(gateway) ->
     [

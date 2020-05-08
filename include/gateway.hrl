@@ -19,5 +19,6 @@
     name = <<>>,
     ip = <<>>,
     port = 0,
-    status = 0
+    status = 0,
+    pid
 }).

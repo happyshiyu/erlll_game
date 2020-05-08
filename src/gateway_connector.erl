@@ -1,23 +1,18 @@
 %%%-------------------------------------------------------------------
 %%% @author shiyu
-%%% @copyright (C) 2020
+%%% @copyright (C) 2020,
 %%% @doc
 %%%
 %%% @end
-%%% Created : 26. 4月 2020 下午 16:13
+%%% Created : 08. 5月 2020 11:42
 %%%-------------------------------------------------------------------
--module(gateway_server).
+-module(gateway_connector).
 -author("shiyu").
 
 -behaviour(gen_server).
--include("gateway.hrl").
--include_lib("stdlib/include/ms_transform.hrl").
 
 %% API
--export([
-    start_link/0,
-    create_token/1
-]).
+-export([start_link/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -25,11 +20,10 @@
     handle_cast/2,
     handle_info/2,
     terminate/2,
-    code_change/3
-]).
+    code_change/3]).
 
 -define(SERVER, ?MODULE).
--define(VALID_TIME, 300).
+
 -record(state, {}).
 
 %%%===================================================================
@@ -40,39 +34,14 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
--spec(create_token(Username :: binary()) -> Token :: binary()).
-create_token(Username) ->
-    Tmp0 = erlang:binary_to_list(Username),
-    Tmp1 = erlang:integer_to_list(rand:uniform(9999999)),
-    Tmp2 = Tmp0 ++ Tmp1,
-    MD51 = list_to_binary([io_lib:format("~2.16.0b",[N]) || N <- binary_to_list(erlang:md5(Tmp2))]),
-    Token = erlang:binary_part(md5(MD51), 8, 16),
-    ValidTime = time_util:time() + ?VALID_TIME,
-    ets:insert(gateway_token, #gateway_token{token = Token, username = Username, valid_time = ValidTime}),
-    Token.
-
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-
 -spec(init(Args :: term()) ->
     {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term()} | ignore).
 init([]) ->
-    ets:new(gateway_token, [named_table, set, public, {read_concurrency, true}, {keypos, #gateway_token.token}]),
-    erlang:send_after(5 * 60 * 1000, self(), clean_invalid_token),
-    Port = env_util:get(port),
-    Dispatch = cowboy_router:compile([
-        {'_', [
-            {"/login/", gateway_handler, []}
-        ]}
-    ]),
-    cowboy:start_clear(http_server, [
-        {keepalive, false},
-        {port, Port}
-    ],
-        #{env => #{dispatch => Dispatch}}
-    ),
+    erlang:send_after(5 * 1000, self(), connect_gateway),
     {ok, #state{}}.
 
 
@@ -100,6 +69,19 @@ handle_cast(_Request, State) ->
     {noreply, NewState :: #state{}} |
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), NewState :: #state{}}).
+handle_info(connect_gateway, State) ->
+    case connect_gateway() of
+        {ok, Pid} ->
+            io:format("Connect Gateway Pid => ~p", [Pid]),
+            ok;
+        _ ->
+            io:format("Connect Gateway Fail"),
+            retry_connect_gateway()
+    end,
+    {noreply, State};
+handle_info({nodedown, _Node}, State) ->
+    io:format("Gateway Down!!!"),
+    {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -119,11 +101,30 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-clean_invalid_token() ->
-    Time = time_util:time(),
-    MS = ets:fun2ms(
-        fun(TmpToken) when
-            TmpToken#gateway_token.valid_time =< Time
-            -> true
-        end),
-    ets:select_delete(gateway_token, MS).
+connect_gateway() ->
+    GatewayNode = env_util:get(gateway_node),
+    case net_kernel:connect_node(GatewayNode) of
+        true ->
+            erlang:monitor_node(GatewayNode, true),
+            ServerId = env_util:get(server_id),
+            IP = env_util:get(ip),
+            Port = env_util:get(port),
+            Name = env_util:get(server_name),
+            case catch rpc:call(GatewayNode, game_server_manager, register, [node(), self(), ServerId, Name, IP, Port]) of
+                {ok, Pid} ->
+                    {ok, Pid};
+                _Error ->
+                    undefined
+            end;
+        _Error ->
+            undefined
+    end.
+
+retry_connect_gateway() ->
+    OldRef = erlang:get(reconnect_timer),
+    case is_reference(OldRef) of
+        false -> ok;
+        true -> erlang:cancel_timer(OldRef)
+    end,
+    Ref = erlang:send_after(60 * 1000, self(), connect_gateway),
+    erlang:put(reconnect_timer, Ref).

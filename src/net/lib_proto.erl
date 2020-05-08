@@ -20,7 +20,7 @@
 %% 获得编/解码模块
 %%-----------------------------------
 get_edecoder(ProtoId) ->
-    ProtoType = ProtoId div 1000,
+    ProtoType = ProtoId div 100,
     case ProtoType of
         1 -> '01_login';
         _ -> false
@@ -62,7 +62,7 @@ client_unpack(Data, UnPackList) ->
     ProtoHeadLen = size(Data) - size(Bin),
     BodyLen = Length - ProtoHeadLen,
     {UnpackBin, LeftBin} = erlang:split_binary(Bin, BodyLen),
-    ProtoType = ProtoId div 1000,
+    ProtoType = ProtoId div 100,
     ProtoName = erlang:list_to_atom("pt_" ++ erlang:integer_to_list(ProtoId) ++ "_s"),
     NewUnPackList = case ProtoType of
                         1 -> ['01_login':decode_msg(UnpackBin, ProtoName) | UnPackList];
