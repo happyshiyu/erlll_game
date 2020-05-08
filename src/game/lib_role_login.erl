@@ -8,7 +8,7 @@
 %%%-------------------------------------------------------------------
 -module(lib_role_login).
 -author("shiyu").
--include("player.hrl").
+-include("role.hrl").
 -include("err_code.hrl").
 
 %% API
@@ -20,9 +20,9 @@
 %% 登录
 handle_login(Username, Password, Role) ->
     Sql = "SELECT `id` FROM `user` WHERE `username` = ? AND `password` = ?",
-    case mysql_pool:execute(Sql, [Username, Password]) of
+    case db:execute(Sql, [Username,Password]) of
         [[ID]] ->
-            {true, Role#player{player_id = ID}};
+            {true, Role#role{role_id = ID}};
         false ->
             {false, ?ERR_PASSWORD_INCORRECT}
     end.
@@ -32,9 +32,9 @@ handle_register(Username, Password, Role) ->
     %% todo unique_id
     UID = rand:uniform(abs(99999999 - 9999999)) + 9999999,
     Sql = "INSERT INTO `user`(`id`, `username`, `passowrd`) VALUES(?,?,?)",
-    case mysql_pool:execute(Sql, [UID, Username, Password]) of
+    case db:execute(Sql, [UID, Username, Password]) of
         AffNum when is_integer(AffNum) andalso AffNum > 0 ->
-            {true, Role#player{player_id = UID}};
+            {true, Role#role{role_id = UID}};
         _ ->
             {false, ?ERR_USER_HAS_EXISTED}
     end.

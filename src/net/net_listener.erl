@@ -4,7 +4,7 @@
 %%% @doc
 %%% @end
 %%%-------------------------------------------------------------------
--module(srv_net).
+-module(net_listener).
 
 -behaviour(gen_server).
 

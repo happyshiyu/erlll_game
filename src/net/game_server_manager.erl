@@ -2,20 +2,18 @@
 %%% @author shiyu
 %%% @copyright (C) 2020
 %%% @doc
-%%% redis工作进程
+%%% 游戏管理
 %%% @end
-%%% Created : 06. 4月 2020 下午 20:37
+%%% Created : 26. 4月 2020 下午 17:08
 %%%-------------------------------------------------------------------
--module(srv_redis_worker).
+-module(game_server_manager).
 -author("shiyu").
 
 -behaviour(gen_server).
+-include("gateway.hrl").
 
 %% API
--export([
-    start_link/1,
-    q/1
-    ]).
+-export([start_link/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -27,31 +25,29 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {
-    conn
-}).
+-record(state, {}).
+
+-define(SERVER_CLOSE, 0).
+-define(SERVER_OPEN, 1).
+-define(SERVER_FIXED, 2).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-start_link(Args) ->
-    gen_server:start_link(?MODULE, Args, []).
-
-q(Query) ->
-    gen_server:call(?MODULE, {q, Query}).
+-spec(start_link() ->
+    {ok, Pid :: pid()} | ignore | {error, Reason :: term()}).
+start_link() ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-
 -spec(init(Args :: term()) ->
     {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term()} | ignore).
-init(Args) ->
-    Host = proplists:get_value(host, Args),
-    Port = proplists:get_value(port, Args),
-    {ok, Conn} = eredis:start_link(Host, Port),
-    {ok, #state{conn = Conn}}.
+init([]) ->
+    ets:new(game_server, [named_table, set, public, {read_concurrency, true}, {keypos, #game_server_info.server_id}]),
+    {ok, #state{}}.
 
 
 -spec(handle_call(Request :: term(), From :: {pid(), Tag :: term()},
@@ -62,11 +58,9 @@ init(Args) ->
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), Reply :: term(), NewState :: #state{}} |
     {stop, Reason :: term(), NewState :: #state{}}).
-handle_call({q, Command}, _From, #state{conn = Conn} = State) ->
-    Ret = eredis:q(Conn, Command),
-    {reply, Ret, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
+
 
 -spec(handle_cast(Request :: term(), State :: #state{}) ->
     {noreply, NewState :: #state{}} |

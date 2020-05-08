@@ -14,7 +14,7 @@
 -define(SERVER, ?MODULE).
 
 start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, [game]).
+    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 %% sup_flags() = #{strategy => strategy(),         % optional
 %%                 intensity => non_neg_integer(), % optional
@@ -25,20 +25,22 @@ start_link() ->
 %%                  shutdown => shutdown(), % optional
 %%                  type => worker(),       % optional
 %%                  modules => modules()}   % optional
-init([Type]) ->
-    SupFlags = #{strategy => one_for_all,
-                 intensity => 0,
-                 period => 1},
-    {ok, {SupFlags, get_child_spec(Type)}}.
+init([]) ->
+    NodeName = erlang:atom_to_list(node()),
+    StartType = case string:find(NodeName, "gateway") of
+                    _ -> gateway
+                end,
+    SupFlags = #{strategy => one_for_all, intensity => 0, period => 1},
+    {ok, {SupFlags, get_child_spec(StartType)}}.
 
 %% internal functions
-get_child_spec(game) ->
+get_child_spec(game_server) ->
     [
-        #{id => pool_sup, start => {pool_sup, start_link, []}, type => supervisor},
-        #{id => srv_net, start => {srv_net, start_link, []}, type => worker}
-%%        #{id => srv_beam, start => {srv_beam, start_link, []}, type => worker}
+        #{id => pool_sup, start => {pool_sup, start_link, [game_server]}, type => supervisor},
+        #{id => net_listener, start => {net_listener, start_link, []}, type => worker}
     ];
-get_child_spec(login) ->
+get_child_spec(gateway) ->
     [
-        #{id => srv_net, start => {srv_net, start_link, []}}
+        #{id => pool_sup, start => {pool_sup, start_link, [gateway]}, type => supervisor},
+        #{id => gateway_server, start => {gateway_server, start_link, []}}
     ].
