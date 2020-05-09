@@ -12,3 +12,4 @@
 -define(RET_SUCCESS_1, 1).
 -define(ERR_PASSWORD_INCORRECT, 2).
 -define(ERR_USER_HAS_EXISTED,   3).
+-define(ERR_PLAYER_HAS_NOT_EXISTED,   4).

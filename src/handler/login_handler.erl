@@ -22,7 +22,7 @@ handle(_ProtoId, Tuple, State) ->
     do_handle(Tuple, State).
 
 do_handle(#pt_1001_c{username = Username, password = Password}, Role) ->
-    case lib_role_login:handle_login(Username, Password, Role) of
+    case lib_player_login:handle_login(Username, Password, Role) of
         {true, NewPlayer} ->
             {reply, #pt_1001_s{}, NewPlayer};
         {false, RetCode} ->

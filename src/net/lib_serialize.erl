@@ -17,6 +17,7 @@
 ]).
 
 -spec serialize(Term :: term()) -> binary().
+serialize(Binary) when is_binary(Binary) -> Binary;
 serialize(Term) ->
     erlang:list_to_bitstring(io_lib:format("~w", [Term])).
 

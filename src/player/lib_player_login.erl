@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 05. 4月 2020 下午 23:19
 %%%-------------------------------------------------------------------
--module(lib_role_login).
+-module(lib_player_login).
 -author("shiyu").
 -include("role.hrl").
 -include("err_code.hrl").
