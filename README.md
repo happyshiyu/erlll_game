@@ -15,15 +15,13 @@
 4. lib_serialize.erl 序列化与反序列化
 5. net_listener.erl 启动ranch进程端口监听 
 
-## 2. 存储层: 
+## 2. 存储 
 1. 采用mysql+redis, 配套mysql-otp、eredis
 2. 进程池使用poolboy
 3. db.erl 进行数据库相关的操作
 4. cache.erl 进行缓存相关的操作
 
-## 3. 日志层(未实装)
-
-## 4. 应用层
+## 3. 应用
 ### player.erl 
 每个client接入，都会启动一个与之对应的player，在其中进行数据的接收与返回。
 
