@@ -44,4 +44,5 @@ get_child_spec(gateway) ->
     [
         #{id => pool_sup, start => {pool_sup, start_link, [gateway]}, type => supervisor},
         #{id => gateway_server, start => {gateway_server, start_link, []}}
+        #{id => game_server_manager, start => {game_server_manager, start_link, []}}
     ].

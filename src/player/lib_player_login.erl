@@ -8,7 +8,7 @@
 %%%-------------------------------------------------------------------
 -module(lib_player_login).
 -author("shiyu").
--include("role.hrl").
+-include("player.hrl").
 -include("err_code.hrl").
 
 %% API
@@ -22,7 +22,7 @@ handle_login(Username, Password, Role) ->
     Sql = "SELECT `id` FROM `user` WHERE `username` = ? AND `password` = ?",
     case db:execute(Sql, [Username,Password]) of
         [[ID]] ->
-            {true, Role#role{role_id = ID}};
+            {true, Role#player{player_id = ID}};
         false ->
             {false, ?ERR_PASSWORD_INCORRECT}
     end.
@@ -34,7 +34,7 @@ handle_register(Username, Password, Role) ->
     Sql = "INSERT INTO `user`(`id`, `username`, `passowrd`) VALUES(?,?,?)",
     case db:execute(Sql, [UID, Username, Password]) of
         AffNum when is_integer(AffNum) andalso AffNum > 0 ->
-            {true, Role#role{role_id = UID}};
+            {true, Role#player{player_id = UID}};
         _ ->
             {false, ?ERR_USER_HAS_EXISTED}
     end.

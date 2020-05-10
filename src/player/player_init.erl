@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 08. 5月 2020 16:58
 %%%-------------------------------------------------------------------
--module(lib_player_init).
+-module(player_init).
 -author("shiyu").
 
 -include("err_code.hrl").
