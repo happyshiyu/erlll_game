@@ -2,7 +2,7 @@
 %%% @author shiyu
 %%% @copyright (C) 2020
 %%% @doc
-%%%
+%%% player init module
 %%% @end
 %%% Created : 08. 5月 2020 16:58
 %%%-------------------------------------------------------------------
@@ -19,22 +19,25 @@
 ]).
 
 -define(ACTIVE_MODULE, [
-    lib_player_kv
+    player_base,
+    player_kv
 ]).
 
 %% --------------------
 %% API
 %% --------------------
+-spec(online(#player{}) -> #player{}).
 online(#player{} = Player0) ->
     F = fun(Module, TmpPlayer) ->
-        Module:initialize(TmpPlayer)
+        Module:from_db(TmpPlayer)
         end,
     Player1 = lists:foldl(F, Player0, ?ACTIVE_MODULE),
     Player1.
 
+-spec(offline(#player{}) -> term()).
 offline(#player{} = Player) ->
     F = fun(Module) ->
-        Module:shutdown(Player)
+        Module:to_db(Player)
         end,
     lists:foreach(F, ?ACTIVE_MODULE).
 

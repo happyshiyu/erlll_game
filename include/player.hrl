@@ -9,7 +9,9 @@
 -author("shiyu").
 
 -record(player, {
+    player_id = 0,
     socket,
     transport,
-    player_id = 0
+    base_data = #{},
+    kv_data = #{}
 }).

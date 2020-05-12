@@ -24,7 +24,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {}).
+-record(state, {pid}).
 
 %%%===================================================================
 %%% API
@@ -70,18 +70,20 @@ handle_cast(_Request, State) ->
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), NewState :: #state{}}).
 handle_info(connect_gateway, State) ->
-    case connect_gateway() of
+    Pid = case connect_gateway() of
         {ok, Pid} ->
             io:format("Connect Gateway Pid => ~p", [Pid]),
-            ok;
+            Pid;
         _ ->
             io:format("Connect Gateway Fail"),
-            retry_connect_gateway()
+            retry_connect_gateway(),
+            undefined
     end,
-    {noreply, State};
+    {noreply, State#state{pid = Pid}};
 handle_info({nodedown, _Node}, State) ->
     io:format("Gateway Down!!!"),
-    {noreply, State};
+    retry_connect_gateway(),
+    {noreply, State#state{pid = undefined}};
 handle_info(_Info, State) ->
     {noreply, State}.
 
