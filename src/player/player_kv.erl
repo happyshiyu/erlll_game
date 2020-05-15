@@ -9,6 +9,8 @@
 -module(player_kv).
 -author("shiyu").
 
+-behaviour(base_module).
+
 -include("player.hrl").
 
 %% API
@@ -32,16 +34,18 @@ from_db(#player{player_id = PlayerId} = Player) ->
         #{}, DataList),
     Player#player{kv_data = KvData}.
 
-to_db(#player{player_id = PlayerId, kv_data = KvData} = _Player) ->
-    maps:map(fun(K, V) ->
+to_db(#player{player_id = PlayerId, kv_data = KvData, change_k_set = ChangeKSet} = _Player) ->
+    ChangeKList = sets:to_list(ChangeKSet),
+    lists:foreach(fun(K) ->
+        V = maps:get(K, KvData),
         Sql = "REPLACE INTO `player_kv`(`player_id`, `k`, `v`) WHERE `player_id` = ? AND `k` = ?",
         K1 = lib_serialize:serialize(K),
         V1 = lib_serialize:serialize(V),
         db:execute(Sql, [PlayerId, K1, V1])
-        end, KvData).
+                  end, ChangeKList).
 
 get(K, #player{kv_data = KvData}, Default) ->
     maps:get(K, KvData, Default).
 
-put(K, V, #player{kv_data = KvData} = Player) ->
-    Player#player{kv_data = KvData#{K => V}}.
+put(K, V, #player{kv_data = KvData, change_k_set = ChangeKSet} = Player) ->
+    Player#player{kv_data = KvData#{K => V}, change_k_set = sets:add_element(K, ChangeKSet)}.

@@ -2,12 +2,14 @@
 %%% @author shiyu
 %%% @copyright (C) 2020
 %%% @doc
-%%%
+%%% player base data module
 %%% @end
 %%% Created : 08. 5月 2020 17:49
 %%%-------------------------------------------------------------------
 -module(player_base).
 -author("shiyu").
+
+-behaviour(base_module).
 
 -include("player.hrl").
 

@@ -16,16 +16,37 @@
 5. net_listener.erl 启动ranch进程端口监听 
 
 ## 2. 存储 
-1. 采用mysql+redis, 配套mysql-otp、eredis
+1. 采用mysql-otp
 2. 进程池使用poolboy
 3. db.erl 进行数据库相关的操作
-4. cache.erl 进行缓存相关的操作
 
 ## 3. 应用
 ### player.erl 
-每个client接入，都会启动一个与之对应的player，在其中进行数据的接收与返回。
-
+```erlang
+-record(player, {
+    player_id = 0,
+    socket,
+    transport,
+    base_data = #{}, %% 全量保存的key-value数据
+    kv_data = #{}, %% 增量保存的key-value数据
+    change_k_set = sets:new()
+}).
+```
+1. 每个client接入，都会启动一个与之对应的player，在其中进行数据的接收与返回
+2. kv_data中的key-value数据都会以binary的形式回存数据库，并实行增量保存(player_base.erl)
+3. base_data中的的key-value数据都会以binary的形式回存数据库，并实行全量保存(player_kv.erl)
+4. \#player{}中的数据每5分钟进行一次回存数据库
 ### player_init.erl
 客户端登录成功后，进行player初始化的模块。
 
-### 未完待续
+### base_module.erl
+```erlang
+-behaviour(base_module).
+```
+加载到player的数据需要实现的behaviour
+1. from_db/1 从db加载数据
+2. to_db/1 回存内存数据到db
+3. get/3 获取对应模块的数据
+4. put/3 存储对应模块的数据
+<br><br>
+可参考<font color='red'>player_kv.erl、player_base.erl</font>

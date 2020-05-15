@@ -2,7 +2,7 @@
 %%% @author shiyu
 %%% @copyright (C) 2020
 %%% @doc
-%%% 角色进程
+%%% about player
 %%% @end
 %%% Created : 05. 4月 2020 下午 20:51
 %%%-------------------------------------------------------------------
@@ -13,5 +13,6 @@
     socket,
     transport,
     base_data = #{},
-    kv_data = #{}
+    kv_data = #{},
+    change_k_set = sets:new()
 }).
