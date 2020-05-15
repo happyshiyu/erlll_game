@@ -3,6 +3,9 @@
 
 # gateway(登录服务器)
 使用cowboy实现http服务。
+
+Module | Desc
+--- | ---
 gateway_server.erl | 启动cowboy并维护登录token | 
 gateway_handler.erl | 处理登录的http请求 | 
 game_server_manager.erl | 感知并管理游戏服务器 |
