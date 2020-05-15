@@ -11,10 +11,13 @@
 ## 1. 网络
 1. tcp通信直接采用ranch
 2. 简单协议结构：| Length | ProtoId | Binary |, 协议内容部分使用protobuf
-3. lib_proto.erl 负责协议的打包解包
-4. lib_serialize.erl 序列化与反序列化
-5. net_listener.erl 启动ranch进程端口监听 
 
+Module | Desc
+--- | ---
+lib_proto.erl | 负责协议的打包解包 | 
+lib_serialize.erl | 序列化与反序列化 | 
+ net_listener.erl | 启动ranch进程端口监听 | 
+gateway_connector.erl | 连接gateway的模块 |
 ## 2. 存储 
 1. 采用mysql-otp
 2. 进程池使用poolboy
@@ -36,8 +39,6 @@
 2. kv_data中的key-value数据都会以binary的形式回存数据库，并实行增量保存(player_base.erl)
 3. base_data中的的key-value数据都会以binary的形式回存数据库，并实行全量保存(player_kv.erl)
 4. \#player{}中的数据每5分钟进行一次回存数据库
-### player_init.erl
-客户端登录成功后，进行player初始化的模块。
 
 ### base_module.erl
 ```erlang
@@ -48,5 +49,13 @@
 2. to_db/1 回存内存数据到db
 3. get/3 获取对应模块的数据
 4. put/3 存储对应模块的数据
-<br><br>
+<br>
 可参考<font color='red'>player_kv.erl、player_base.erl</font>
+
+### 其他模块
+Module | Desc
+--- | ---
+player_init.erl | 客户端登录成功后，进行player初始化的模块 | 
+handler_router.erl | 该模块会根据协议号(ProtoId)选择对应的hander |
+client.erl | 模拟客户端 |
+make_proto.py | 生成erl对应./make_proto/proto中的协议文件 |

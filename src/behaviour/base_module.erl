@@ -17,3 +17,5 @@
 -callback get(K :: term(), Player :: #player{}, Default :: term()) -> term().
 
 -callback put(K :: term(), V :: term(), Player :: #player{}) -> NewPlayer :: #player{}.
+
+-optional_callbacks([get/3, put/3]).
