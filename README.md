@@ -3,15 +3,15 @@
 
 # gateway(登录服务器)
 使用cowboy实现http服务。
-1. gateway_server.erl 启动cowboy并维护登录token
-2. gateway_handler.erl 处理登录的http请求
-3. game_server_manager.erl 感知并管理游戏服务器
+gateway_server.erl | 启动cowboy并维护登录token | 
+gateway_handler.erl | 处理登录的http请求 | 
+game_server_manager.erl | 感知并管理游戏服务器 |
 
 # game_server(游戏服务器)
 ## 1. 网络
 1. tcp通信直接采用ranch
 2. 简单协议结构：| Length | ProtoId | Binary |, 协议内容部分使用protobuf
-
+3. 以下是部分模块说明
 Module | Desc
 --- | ---
 lib_proto.erl | 负责协议的打包解包 | 
