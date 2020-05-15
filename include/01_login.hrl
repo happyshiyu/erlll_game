@@ -7,17 +7,30 @@
 
 -define('01_login_gpb_version', "4.11.1").
 
--ifndef('PT_1001_C_PB_H').
--define('PT_1001_C_PB_H', true).
--record(pt_1001_c,
-        {username = []          :: iodata() | undefined, % = 1
-         password = []          :: iodata() | undefined % = 2
+-ifndef('PT_101_C_PB_H').
+-define('PT_101_C_PB_H', true).
+-record(pt_101_c,
+        {player_id = 0          :: non_neg_integer() | undefined % = 1, 64 bits
         }).
 -endif.
 
--ifndef('PT_1001_S_PB_H').
--define('PT_1001_S_PB_H', true).
--record(pt_1001_s,
+-ifndef('PT_101_S_PB_H').
+-define('PT_101_S_PB_H', true).
+-record(pt_101_s,
+        {ret = 0                :: non_neg_integer() | undefined % = 1, 32 bits
+        }).
+-endif.
+
+-ifndef('PT_102_C_PB_H').
+-define('PT_102_C_PB_H', true).
+-record(pt_102_c,
+        {name = <<>>            :: iodata() | undefined % = 1
+        }).
+-endif.
+
+-ifndef('PT_102_S_PB_H').
+-define('PT_102_S_PB_H', true).
+-record(pt_102_s,
         {ret = 0                :: non_neg_integer() | undefined % = 1, 32 bits
         }).
 -endif.

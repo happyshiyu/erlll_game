@@ -1,11 +1,19 @@
 syntax = "proto3";
 
-// 登录协议
-message pt_1001_c {
-    string username = 1;
-    string password = 2;
+// 登录校验
+message pt_101_c {
+    uint64 player_id = 1;
 }
 
-message pt_1001_s {
+message pt_101_s {
+    uint32 ret = 1;
+}
+
+// 创建角色
+message pt_102_c {
+	string name = 1;
+}
+
+message pt_102_s {
     uint32 ret = 1;
 }

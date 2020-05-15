@@ -13,28 +13,25 @@
 
 %% API
 -export([
-    handle_login/3,
-    handle_register/3
+    handle_login/2,
+    handle_create_role/2
 ]).
 
-%% 登录
-handle_login(Username, Password, Role) ->
-    Sql = "SELECT `id` FROM `user` WHERE `username` = ? AND `password` = ?",
-    case db:execute(Sql, [Username,Password]) of
+handle_login(PlayerId, #player{} = Player) ->
+    Sql = "SELECT COUNT(1) FROM `player` WHERE `id` = ?",
+    case db:execute(Sql, [PlayerId]) of
         [[ID]] ->
-            {true, Role#player{player_id = ID}};
+            {true, Player#player{player_id = ID}};
         false ->
-            {false, ?ERR_PASSWORD_INCORRECT}
+            {false, ?ERR_NOT_CREATED_PLAYER}
     end.
 
-%% 注册
-handle_register(Username, Password, Role) ->
-    %% todo unique_id
+handle_create_role(Name, Player) ->
     UID = rand:uniform(abs(99999999 - 9999999)) + 9999999,
-    Sql = "INSERT INTO `user`(`id`, `username`, `passowrd`) VALUES(?,?,?)",
-    case db:execute(Sql, [UID, Username, Password]) of
+    Sql = "INSERT INTO `player`(`id`, `name`, `lev`) VALUES(?,?,?)",
+    case db:execute(Sql, [UID, Name, 0]) of
         AffNum when is_integer(AffNum) andalso AffNum > 0 ->
-            {true, Role#player{player_id = UID}};
+            {true, Player#player{player_id = UID}};
         _ ->
-            {false, ?ERR_USER_HAS_EXISTED}
+            {false, ?ERR_ALREADY_HAVE_PLAYER}
     end.

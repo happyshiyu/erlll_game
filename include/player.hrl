@@ -10,6 +10,7 @@
 
 -record(player, {
     player_id = 0,
+    is_verify = false,
     socket,
     transport,
     base_data = #{},

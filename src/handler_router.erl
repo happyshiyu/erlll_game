@@ -16,5 +16,6 @@ route(ProtoId) ->
     ProtoType = ProtoId div 100,
     case ProtoType of
         1 -> login_handler;
+        2 -> base_handler;
         _ -> false
     end.

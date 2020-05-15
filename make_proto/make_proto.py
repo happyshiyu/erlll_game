@@ -1,19 +1,21 @@
-#!/usr/bin/python
+#!//usr////bin////python
 # -*- coding: UTF-8 -*-
 
 import os
 import shutil;
 
 
-proto_src = "./proto/"
-erlang_proto_src = "../src/proto/"
-erlang_include_src = "../include/"
+proto_src = ".//proto//"
+erlang_proto_src = "..//src//proto//"
+erlang_include_src = "..//include//"
 
 
 filename_list = os.listdir("proto")
+print os.getcwd()
+print filename_list
 for filename in filename_list :
-	print "./protoc-erl " + proto_src + filename
-	os.system("./protoc-erl " + proto_src + filename)
+	print "escript protoc-erl -strbin " + proto_src + filename
+	os.system("escript protoc-erl -strbin " + proto_src + filename)
 
 
 filename_list = os.listdir("proto")
