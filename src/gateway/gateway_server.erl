@@ -46,7 +46,7 @@ create_token(Username) ->
     Tmp1 = erlang:integer_to_list(rand:uniform(9999999)),
     Tmp2 = Tmp0 ++ Tmp1,
     MD51 = list_to_binary([io_lib:format("~2.16.0b",[N]) || N <- binary_to_list(erlang:md5(Tmp2))]),
-    Token = erlang:binary_part(md5(MD51), 8, 16),
+    Token = erlang:binary_part(erlang:md5(MD51), 8, 16),
     ValidTime = time_util:time() + ?VALID_TIME,
     ets:insert(gateway_token, #gateway_token{token = Token, username = Username, valid_time = ValidTime}),
     Token.

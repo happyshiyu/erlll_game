@@ -71,9 +71,9 @@ handle_cast(_Request, State) ->
     {stop, Reason :: term(), NewState :: #state{}}).
 handle_info(connect_gateway, State) ->
     Pid = case connect_gateway() of
-        {ok, Pid} ->
-            io:format("Connect Gateway Pid => ~p", [Pid]),
-            Pid;
+        {ok, RetPid} ->
+            io:format("Connect Gateway Pid => ~p", [RetPid]),
+            RetPid;
         _ ->
             io:format("Connect Gateway Fail"),
             retry_connect_gateway(),
