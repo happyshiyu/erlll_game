@@ -61,5 +61,6 @@ Module | Desc
 --- | ---
 player_init.erl | 客户端登录成功后，进行player初始化的模块 | 
 handler_router.erl | 该模块会根据协议号(ProtoId)选择对应的hander |
+global_id_manger.erl | 负责生成全局唯一id |
 client.erl | 模拟客户端 |
 make_proto.py | 生成erl对应./make_proto/proto中的协议文件 |
