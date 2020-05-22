@@ -33,6 +33,10 @@ time() ->
     {M, S, _} = os:timestamp(),
     M * 1000000 + S.
 
+time(ms) ->
+    {M, S, MS} = os:timestamp(),
+    trunc(M * 1000000000 + S * 1000 + MS / 1000);
+
 time(today) ->
     {M, S, MS} = os:timestamp(),
     {_, Time} = calendar:now_to_local_time({M, S, MS}),

@@ -27,7 +27,7 @@ handle_login(PlayerId, #player{} = Player) ->
     end.
 
 handle_create_role(Name, Player) ->
-    UID = rand:uniform(abs(99999999 - 9999999)) + 9999999,
+    UID = global_id_manger:create_id(),
     Sql = "INSERT INTO `player`(`id`, `name`, `lev`) VALUES(?,?,?)",
     case db:execute(Sql, [UID, Name, 0]) of
         AffNum when is_integer(AffNum) andalso AffNum > 0 ->
